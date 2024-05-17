@@ -87,21 +87,22 @@ public:
             return;
         }
 
-        std::cout << "Host Size: " << host_rows << "x" << host_cols << std::endl;
-        std::cout << "Host Matrix: " << std::endl;
+        std::cout << "Matrix:" << std::endl;
+        std::cout << "\tHost Size: " << host_rows << "x" << host_cols << std::endl;
+        std::cout << "\tHost Matrix: " << std::endl;
         for (uint32_t i = 0; i < host_rows; i++) {
-            std::cout << "\t";
+            std::cout << "\t\t";
             for (uint32_t j = 0; j < host_cols; j++) {
                 std::cout << std::setw(4) << host_mat[i][j] << " ";
             }
             std::cout << std::endl;
         }
 
-        std::cout << "Max type limit: " << static_cast<int64_t>(this->get_max_type_limit()) << std::endl;
-        std::cout << "Device Size: " << device_rows << "x" << device_cols << std::endl;
-        std::cout << "Device Matrix:" << std::endl;
+        std::cout << "\tMax type limit: " << static_cast<int64_t>(this->get_max_type_limit()) << std::endl;
+        std::cout << "\tDevice Size: " << device_rows << "x" << device_cols << std::endl;
+        std::cout << "\tDevice Matrix:" << std::endl;
         for (uint32_t i = 0; i < device_rows; i++) {
-            std::cout << "\t";
+            std::cout << "\t\t";
             for (uint32_t j = 0; j < device_cols; j++) {
                 std::cout << std::setw(4) << static_cast<int64_t>(device_mat[i * device_cols + j]) << " ";
             }

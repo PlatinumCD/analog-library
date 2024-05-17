@@ -27,8 +27,8 @@ public:
     AnalogVector(uint32_t length)
         : host_arr(new float[length]()),
           host_length(length),
-          device_arr(new T[DEVICE_COLS]()),
-          device_length(DEVICE_COLS),
+          device_arr(new T[DEVICE_ROWS]()),
+          device_length(DEVICE_ROWS),
           owns_host_arr(true) {}
 
     /**
@@ -104,19 +104,21 @@ public:
             return;
         }
 
-        std::cout << "Host Array Length: " << host_length << std::endl;
-        std::cout << "\t";
+        std::cout << "Vector:" << std::endl;
+        std::cout << "\tHost Array Length: " << host_length << std::endl;
+        std::cout << "\t\t";
         for (uint32_t i = 0; i < host_length; i++) {
             std::cout << host_arr[i] << " ";
         }
         std::cout << std::endl;
 
-        std::cout << "Device Array Length: " << device_length << std::endl;
-        std::cout << "Device Array:" << std::endl;
-        std::cout << "\t";
+        std::cout << "\tDevice Array Length: " << device_length << std::endl;
+        std::cout << "\tDevice Array:" << std::endl;
+        std::cout << "\t\t";
         for (uint32_t i = 0; i < device_length; i++) {
             std::cout << std::setw(4) << static_cast<int>(device_arr[i]) << " ";
         }
+        std::cout << std::endl;
         std::cout << std::endl;
     }
 
