@@ -1,6 +1,6 @@
-# Analog Matrix-Vector Multiplication Project
+# Analog MVM Library
 
-This project provides an implementation of an Analog Matrix-Vector Multiplication (MVM) library, including classes and methods to manage matrices and vectors, quantize and dequantize their values, and perform MVM operations on a specified hardware infrastructure.
+This project provids an implementation of an Analog Matrix-Vector Multiplication (MVM) library, including classes and methods to manage matrices and vectors, quantize and dequantize their values, and perform MVM operations on a specified hardware infrastructure.
 
 ## Overview
 
