@@ -1,5 +1,5 @@
 #include <cstdint>
-#include "analog/analog.h"
+#include "../new/analog.h"
 
 int main() {
     // Dimensions for matrix and vector

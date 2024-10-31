@@ -8,13 +8,8 @@
 
 #include <iostream>
 #include <cstdint>
-
-// Forward declarations to avoid include dependencies
-template <class T>
-class AnalogMatrix;
-
-template <class T>
-class AnalogVector;
+#include <cstdlib>
+#include <new>
 
 /**
  * @class AnalogContext
@@ -28,9 +23,19 @@ public:
      */
     AnalogContext(uint32_t num_arrays)
         : num_arrays(num_arrays),
-          matrix_scales(new float[num_arrays]),
-          vector_scales(new float[num_arrays]),
-          output_scales(new float[num_arrays]) {
+          matrix_scales(nullptr),
+          vector_scales(nullptr),
+          output_scales(nullptr) {
+        // Allocate memory for the scales using new
+        matrix_scales = new double[num_arrays];
+        vector_scales = new double[num_arrays];
+        output_scales = new double[num_arrays];
+
+        if (!matrix_scales || !vector_scales || !output_scales) {
+            std::cerr << "Memory allocation failed in AnalogContext constructor" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         // Initialize each element to 1.0
         for (uint32_t i = 0; i < num_arrays; ++i) {
             matrix_scales[i] = 1.0f;
@@ -48,53 +53,32 @@ public:
         delete[] output_scales;
     }
 
-    /**
-     * @brief Sets a specific value in the matrix scale factors array.
-     * @param value The value to set.
-     * @param index The index in the array.
-     */
-    void set_matrix_scale(float value, uint32_t index) {
+    // Methods to set and get scales
+    void set_matrix_scale(double value, uint32_t index) {
         if (index < num_arrays) {
             matrix_scales[index] = value;
         }
     }
 
-    /**
-     * @brief Sets a specific value in the vector scale factors array.
-     * @param value The value to set.
-     * @param index The index in the array.
-     */
-    void set_vector_scale(float value, uint32_t index) {
+    void set_vector_scale(double value, uint32_t index) {
         if (index < num_arrays) {
             vector_scales[index] = value;
         }
     }
 
-    /**
-     * @brief Compute the output vector scale factor.
-     * @param index The index in the array.
-     */
     void compute_scale(uint32_t index) {
         if (index < num_arrays) {
             output_scales[index] = matrix_scales[index] * vector_scales[index];
         }
     }
 
-    /**
-     * @brief Gets a specific value from the output scale factors array.
-     * @param index The index in the array.
-     * @return The value at the specified index.
-     */
-    float get_scale(uint32_t index) const {
+    double get_scale(uint32_t index) const {
         if (index < num_arrays) {
             return output_scales[index];
         }
         return 0.0f;
     }
 
-    /**
-     * @brief Prints the values at each index for both arrays.
-     */
     void print() const {
         std::cout << "Matrix Scale Factors:" << std::endl;
         for (uint32_t i = 0; i < num_arrays; ++i) {
@@ -113,10 +97,10 @@ public:
     }
 
 private:
-    uint32_t num_arrays; ///< Number of arrays
-    float* matrix_scales;  ///< Array of matrix scale factors
-    float* vector_scales;  ///< Array of vector scale factors
-    float* output_scales;  ///< Array of output scale factors
+    uint32_t num_arrays;    ///< Number of arrays
+    double* matrix_scales;   ///< Array of matrix scale factors
+    double* vector_scales;   ///< Array of vector scale factors
+    double* output_scales;   ///< Array of output scale factors
 };
 
 #endif // ANALOG_CONTEXT_H
