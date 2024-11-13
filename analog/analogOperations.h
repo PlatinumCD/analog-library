@@ -22,8 +22,7 @@ template <typename T, typename qT = T>
 uint16_t mvm_set_matrix(AnalogContext &ctx, AnalogMatrix<T, qT> &mat, uint16_t tile_id) {
     mat.transfer_to_device(); // Transfer the matrix to device (quantize if integral)
                               //
-    float scale = mat.get_scale_factor(); // Get the matrix scale
-    ctx.set_matrix_scale(scale, tile_id); // Set the matrix scale in the context
+    ctx.set_matrix(&mat, tile_id); // Set the matrix scale in the context
 
     qT* data = mat.get_device_mat(); // Get the pointer to the device matrix data
     uint16_t status_flag = 0;
@@ -47,8 +46,8 @@ uint16_t mvm_set_matrix(AnalogContext &ctx, AnalogMatrix<T, qT> &mat, uint16_t t
 template <typename T, typename qT = T>
 uint16_t mvm_load_vector(AnalogContext &ctx, AnalogVector<T, qT> &vec, uint16_t tile_id) {
     vec.transfer_to_device(); // Transfer the vector to device (quantize if integral)
-    float scale = vec.get_scale_factor(); // Get the vector scale
-    ctx.set_vector_scale(scale, tile_id); // Set the vector scale in the context
+
+    ctx.set_input_vector(&vec, tile_id);
 
     void* data = vec.get_device_arr(); // Get the pointer to the device vector data
     uint16_t status_flag = 0;
@@ -76,7 +75,11 @@ uint16_t mvm_compute(AnalogContext &ctx, uint16_t tile_id) {
         : "=r" (status_flag)
         : "r"(tile_id)
     );
-    ctx.compute_scale(tile_id); // Compute the output scale
+
+    auto* mat = ctx.get_matrix(tile_id);
+    auto* vec = ctx.get_input_vector(tile_id);
+    ctx.compute_update(tile_id);
+    vec->update_scale_factor(mat->get_scale_factor());
     return status_flag;
 }
 
@@ -89,7 +92,6 @@ uint16_t mvm_compute(AnalogContext &ctx, uint16_t tile_id) {
  */
 template <typename T, typename qT = T>
 uint16_t mvm_store_vector(AnalogContext &ctx, AnalogVector<T, qT> &vec, uint16_t tile_id) {
-    double scale = ctx.get_scale(tile_id); // Get the output scale for dequantization
     qT* data = vec.get_device_arr(); // Get the pointer to the device vector data
     uint16_t status_flag = 0;
 
@@ -100,7 +102,24 @@ uint16_t mvm_store_vector(AnalogContext &ctx, AnalogVector<T, qT> &vec, uint16_t
         : "memory"
     );
 
+    auto* input_vector = ctx.get_input_vector(tile_id); // Get the output scale for dequantization
+    double scale = input_vector->get_scale_factor();
     vec.transfer_to_host(scale); // Transfer the vector to host (dequantize if integral)
+    return status_flag;
+}
+
+
+uint32_t mvm_move_vector(AnalogContext &ctx, uint32_t tile_id, uint32_t tile_id_new) {
+    uint32_t status_flag;
+
+    ctx.move_vector(tile_id, tile_id_new);
+
+    asm volatile (
+        "mvm.mv %0, %1, %2"
+        : "=r" (status_flag)
+        : "r"(tile_id), "r"(tile_id_new)
+    );
+
     return status_flag;
 }
 

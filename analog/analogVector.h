@@ -14,13 +14,15 @@
 #include <type_traits>
 #include <exception>  // For std::bad_alloc
 
+#include "analogType.h"
+
 /**
  * @class AnalogVector
  * @brief Represents a vector compatible with MVM analog intrinsic calls.
  * @tparam T Data type of the elements in the vector (float, int8_t, int16_t, int32_t).
  */
 template <typename T, typename qT = T>
-class AnalogVector {
+class AnalogVector : public AnalogType {
 public:
     /**
      * @brief Constructor of the AnalogVector class without an array.
@@ -31,8 +33,7 @@ public:
           host_length(length),
           device_arr(nullptr),
           device_length(DEVICE_COLS),
-          owns_host_arr(true),
-          scale_factor(1.0f) {
+          owns_host_arr(true) {
         static_assert(std::is_arithmetic<T>::value, "AnalogVector requires arithmetic data type");
 
         // Allocate memory for host_arr
@@ -63,8 +64,7 @@ public:
           host_length(length),
           device_arr(nullptr),
           device_length(DEVICE_COLS),
-          owns_host_arr(false),
-          scale_factor(1.0f) {
+          owns_host_arr(false) {
         static_assert(std::is_arithmetic<T>::value, "AnalogVector requires arithmetic data type");
 
         // Allocate memory for device_arr
@@ -161,6 +161,8 @@ public:
 
             device_arr[i] = static_cast<qT>(std::llround(scaled_value));
         }
+
+        scale_factor /= std::numeric_limits<qT>::max();
     }
 
     void transfer_to_device() {
@@ -177,17 +179,18 @@ public:
         }
     }
 
-    void dequantize_transfer_to_host(double sf) {
+    void dequantize_transfer_to_host() {
         for (uint32_t i = 0; i < host_length; i++) {
-            host_arr[i] = static_cast<T>(device_arr[i]) * sf;
+            host_arr[i] = static_cast<T>(device_arr[i]) * scale_factor;
         }
     }
 
-    void transfer_to_host(double sf = 1.0) {
+    void transfer_to_host(double scale = 1.0) {
+        scale_factor = scale;
         if (std::is_same<T, qT>::value) {
             direct_transfer_to_host();
         } else {
-            dequantize_transfer_to_host(sf);
+            dequantize_transfer_to_host();
         }
     }
 
@@ -199,17 +202,6 @@ public:
         return device_arr;
     }
 
-    /**
-     * @brief Gets the scale factor used in quantization.
-     * @return The scale factor.
-     */
-    float get_scale_factor() const {
-        if (std::is_same<T, qT>::value) {
-            return scale_factor;
-        } else {
-            return scale_factor / std::numeric_limits<qT>::max();
-        }
-    }
 
     /**
      * @brief Prints the properties and content of the host and device arrays.
@@ -238,6 +230,7 @@ public:
 
         // Print device array
         std::cout << "\tDevice Array Length: " << device_length << std::endl;
+        std::cout << "\tDevice Scale: " << scale_factor << std::endl;
         std::cout << "\tDevice Array:" << std::endl;
         std::cout << "\t\t";
         for (uint32_t i = 0; i < device_length; i++) {
@@ -261,8 +254,6 @@ private:
     qT* device_arr;         ///< Pointer to the device array (can be of different types).
     uint32_t device_length; ///< Length of the device array.
                             
-    double scale_factor;    ///< The scale factor for quantization.
-                             
     bool owns_host_arr;     ///< Whether this object owns and should delete the host array.
 };
 

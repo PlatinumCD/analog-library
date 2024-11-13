@@ -15,13 +15,15 @@
 #include <new>        // For std::nothrow
 #include <exception>  // For std::bad_alloc
 
+#include "analogType.h"
+
 /**
  * @class AnalogMatrix
  * @brief Represents a matrix compatible with MVM analog intrinsic calls.
  * @tparam T Data type of the elements in the matrix (float, int8_t, int16_t, int32_t).
  */
 template <typename T, typename qT = T>
-class AnalogMatrix {
+class AnalogMatrix : public AnalogType {
 public:
     /**
      * @brief Constructor for the AnalogMatrix class.
@@ -36,7 +38,6 @@ public:
           device_mat(nullptr),
           device_rows(DEVICE_ROWS),
           device_cols(DEVICE_COLS),
-          scale_factor(1.0f),
           owns_host_mat(false) 
     {
         static_assert(std::is_arithmetic<T>::value, "AnalogMatrix requires arithmetic data type");
@@ -62,7 +63,6 @@ public:
           device_mat(nullptr),
           device_rows(DEVICE_ROWS),
           device_cols(DEVICE_COLS),
-          scale_factor(1.0f),
           owns_host_mat(true)
     {
         static_assert(std::is_arithmetic<T>::value, "AnalogMatrix requires arithmetic data type");
@@ -191,6 +191,8 @@ public:
                 device_mat[device_index] = static_cast<qT>(std::llround(scaled_value));
             }
         }
+
+        scale_factor /= std::numeric_limits<qT>::max();
     }
 
     void transfer_to_device() {
@@ -207,18 +209,6 @@ public:
      */
     qT* get_device_mat() const {
         return device_mat;
-    }
-
-    /**
-     * @brief Gets the scale factor used in quantization.
-     * @return The scale factor.
-     */
-    double get_scale_factor() const {
-        if (std::is_same<T, qT>::value) {
-            return scale_factor;
-        } else {
-            return scale_factor / std::numeric_limits<qT>::max();
-        }
     }
 
     /**
@@ -247,6 +237,7 @@ public:
         }
 
         std::cout << "\tDevice Size: " << device_rows << "x" << device_cols << std::endl;
+        std::cout << "\tDevice Scale: " << scale_factor << std::endl;
         std::cout << "\tDevice Matrix: " << std::endl;
         for (uint16_t i = 0; i < device_rows; i++) {
             std::cout << "\t\t";
@@ -274,8 +265,6 @@ private:
     qT* device_mat;        ///< Pointer to the device matrix.
     uint16_t device_rows; ///< Number of rows in the device matrix.
     uint16_t device_cols; ///< Number of columns in the device matrix.
-
-    double scale_factor;   ///< The scale factor for quantization.
 
     bool owns_host_mat;   ///< Indicates if this object owns the host_mat memory
 };
